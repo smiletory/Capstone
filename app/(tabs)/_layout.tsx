@@ -27,17 +27,27 @@ export default function TabLayout() {
         }),
       }}>
       <Tabs.Screen
+        // 채팅 창
+        name="chatting"
+        options={{
+          title: '',
+          tabBarIcon: ({ color }) => <IconSymbol size={28} name="chatting.fill" color={color} />,
+        }}
+      />
+      <Tabs.Screen
+        // 홈 화면
         name="index"
         options={{
-          title: 'Home',
+          title: '',
           tabBarIcon: ({ color }) => <IconSymbol size={28} name="house.fill" color={color} />,
         }}
       />
       <Tabs.Screen
-        name="explore"
+        // 세팅창
+        name="setting"
         options={{
-          title: 'Explore',
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="paperplane.fill" color={color} />,
+          title: '',
+          tabBarIcon: ({ color }) => <IconSymbol size={28} name="setting.fill" color={color} />,
         }}
       />
     </Tabs>
