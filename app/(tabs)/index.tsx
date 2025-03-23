@@ -88,9 +88,9 @@ const styles = StyleSheet.create({
 
   // 검색창 프레임
   inputContainer: {
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 20,
+    justifyContent: 'center', // 수직 정렬
+    alignItems: 'center',     // 수평 정렬
+    padding: 20,              // 내부 여백
   },
 
   // 검색창
@@ -98,36 +98,38 @@ const styles = StyleSheet.create({
     width: '70%',
     height: 30,
     fontSize: 18,
-    borderWidth: 0, // 기본 테두리 제거
-    paddingLeft: 5,
-    marginBottom: 20,
-    borderBottomWidth: 3,
-    borderBottomColor: 'gray', // 기본 밑줄 색상
-    outlineStyle: 'none',
+    borderWidth: 0,           // 입력창 두께
+    paddingLeft: 5,           // 왼쪽 여백
+    marginBottom: 20,         // 아래 여백
+    borderBottomWidth: 3,     // 입력창 하단만 테두리 설정
+    borderBottomColor: 'gray',// 하단 테두리 색
+    outlineStyle: 'none',     // 포커스시 테두리 제거
   },
+
+  // 검색어 폰트
   textStyle: {
     fontSize: 18,
   },
 
   // 아이템 리스트 프레임
   itemList: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',  // 공간이 부족하면 아이템이 아래로 내려가게 설정
-    justifyContent: 'space-between',  // 아이템 사이에 균등한 공간 배치
-    paddingHorizontal: 10,
+    flexDirection: 'row',             // 아이템 가로 배치
+    flexWrap: 'wrap',                 // 너비 초과시 아래로
+    justifyContent: 'space-between',  // 아이템들 간격
+    paddingHorizontal: 10,            // 수평 여백
   },
 
   // 각 아이템 프레임
   itemContainer: {
-    width: '50%',  // 각 아이템의 너비를 화면의 48%로 설정 (여백을 고려)
-    marginBottom: 20,  // 아이템 간의 수직 간격
+    width: '46%',
+    marginBottom: 20,
     padding: 15,
-    borderRadius: 15,
+    borderRadius: 15,                       // 테두리의 모서리 둥글기
     backgroundColor: '#f9f9f9',
-    elevation: 5,  // 아이템을 살짝 띄운 효과 (Android)
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.3,
-    shadowRadius: 5,
+    elevation: 5,                           // 안드로이드에서 그림자
+    shadowOffset: { width: 3, height: 3 },  // 그림자 위치
+    shadowOpacity: 0.3,                     // 그림자 투명도
+    shadowRadius: 5,                        // 그림자 흐림
   },
 
   // 이미지
