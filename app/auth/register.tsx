@@ -1,6 +1,15 @@
 // app/auth/register.tsx
 import React, { useState } from "react";
-import { View, Text, TextInput, Button, Alert, StyleSheet } from "react-native";
+import {
+    View,
+    Text,
+    TextInput,
+    Button,
+    Alert,
+    StyleSheet,
+    TouchableOpacity,
+    FlatList,
+} from "react-native";
 import { sendVerificationCode } from "../../utils/sendVerificationCode";
 import {
     createUserWithEmailAndPassword,
@@ -11,16 +20,23 @@ import { doc, setDoc } from "firebase/firestore";
 import { useRouter } from "expo-router";
 
 export default function RegisterScreen() {
-    const [email, setEmail] = useState("");
+    const [emailLocal, setEmailLocal] = useState("");
+    const [emailDomain, setEmailDomain] = useState("@stu.jejunu.ac.kr");
+    const [showDomains, setShowDomains] = useState(false);
     const [password, setPassword] = useState("");
     const [code, setCode] = useState("");
     const [generatedCode, setGeneratedCode] = useState("");
     const router = useRouter();
 
+    const email = `${emailLocal}${emailDomain}`;
+
     const handleSendCode = async () => {
         if (
-            !email.endsWith("@stu.jejunu.ac.kr") &&
-            !email.endsWith("@jejunu.ac.kr")
+            !emailLocal ||
+            !(
+                email.endsWith("@stu.jejunu.ac.kr") ||
+                email.endsWith("@jejunu.ac.kr")
+            )
         ) {
             Alert.alert(
                 "❌ 이메일 형식 오류",
@@ -90,6 +106,7 @@ export default function RegisterScreen() {
                     //        onPress: () => router.replace("/main"),
                     //    },
                     //]);
+
                     router.replace("/main");
                 } catch (firestoreError) {
                     console.error("❌ Firestore 저장 실패:", firestoreError);
@@ -119,13 +136,37 @@ export default function RegisterScreen() {
             <Text style={styles.title}>회원가입</Text>
 
             <TextInput
-                placeholder="이메일 주소"
-                value={email}
-                onChangeText={setEmail}
-                keyboardType="email-address"
+                placeholder="이메일 앞부분 (예: honggildong)"
+                value={emailLocal}
+                onChangeText={setEmailLocal}
                 autoCapitalize="none"
                 style={styles.input}
             />
+
+            <TouchableOpacity
+                onPress={() => setShowDomains(!showDomains)}
+                style={styles.input}
+            >
+                <Text>{emailDomain}</Text>
+            </TouchableOpacity>
+
+            {showDomains && (
+                <FlatList
+                    data={["@stu.jejunu.ac.kr", "@jejunu.ac.kr"]}
+                    keyExtractor={(item) => item}
+                    renderItem={({ item }) => (
+                        <TouchableOpacity
+                            style={styles.domainOption}
+                            onPress={() => {
+                                setEmailDomain(item);
+                                setShowDomains(false);
+                            }}
+                        >
+                            <Text>{item}</Text>
+                        </TouchableOpacity>
+                    )}
+                />
+            )}
 
             <TextInput
                 placeholder="비밀번호"
@@ -146,6 +187,13 @@ export default function RegisterScreen() {
             />
 
             <Button title="인증 확인 및 회원가입" onPress={handleVerify} />
+
+            <TouchableOpacity
+                onPress={() => router.replace("/auth/login")}
+                style={styles.backButton}
+            >
+                <Text style={styles.backButtonText}>← 로그인으로 돌아가기</Text>
+            </TouchableOpacity>
         </View>
     );
 }
@@ -168,5 +216,19 @@ const styles = StyleSheet.create({
         padding: 10,
         marginBottom: 10,
         borderRadius: 5,
+    },
+    backButton: {
+        marginTop: 20,
+        alignItems: "center",
+    },
+    backButtonText: {
+        color: "#007AFF",
+        fontSize: 16,
+    },
+    domainOption: {
+        padding: 10,
+        borderBottomWidth: 1,
+        borderColor: "#ccc",
+        backgroundColor: "#f9f9f9",
     },
 });
