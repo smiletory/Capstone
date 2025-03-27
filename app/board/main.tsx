@@ -11,7 +11,7 @@ export default function MainScreen() {
         try {
             await signOut(auth);
             Alert.alert("로그아웃 되었습니다");
-            router.replace("./auth/login");
+            router.replace("../auth/login");
         } catch (error: any) {
             Alert.alert("로그아웃 실패", error.message || "알 수 없는 오류");
             console.error("❌ 로그아웃 에러:", error);

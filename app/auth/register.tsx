@@ -105,7 +105,7 @@ export default function RegisterScreen() {
                 Alert.alert("🎉 회원가입 성공", "회원가입이 완료되었습니다.", [
                     {
                         text: "확인",
-                        onPress: () => router.replace("./board/main"),
+                        onPress: () => router.replace("../board/main"),
                     },
                 ]);
             }
