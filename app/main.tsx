@@ -14,7 +14,7 @@ export default function MainScreen() {
             router.replace("./auth/login");
         } catch (error: any) {
             Alert.alert("로그아웃 실패", error.message || "알 수 없는 오류");
-            console.error("❌  로그아웃 에러:", error);
+            console.error("❌ 로그아웃 에러:", error);
         }
     };
 
