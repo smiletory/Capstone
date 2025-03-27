@@ -7,6 +7,7 @@ import {
     StyleSheet,
     Alert,
     Dimensions,
+    FlatList,
 } from "react-native";
 import { signInWithEmailAndPassword } from "firebase/auth";
 import { useRouter } from "expo-router";
@@ -15,9 +16,13 @@ import { auth } from "../../constants/firebaseConfig";
 const { width } = Dimensions.get("window");
 
 export default function IndexScreen() {
-    const [email, setEmail] = useState("");
+    const [emailLocal, setEmailLocal] = useState("");
+    const [emailDomain, setEmailDomain] = useState("@stu.jejunu.ac.kr");
+    const [showDomains, setShowDomains] = useState(false);
     const [password, setPassword] = useState("");
     const router = useRouter();
+
+    const email = `${emailLocal}${emailDomain}`;
 
     const isValidEmail = (email: string) => {
         const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
@@ -36,7 +41,7 @@ export default function IndexScreen() {
             JSON.stringify(trimmedEmail)
         );
 
-        if (!trimmedEmail) {
+        if (!emailLocal) {
             Alert.alert("입력 오류", "이메일을 입력해주세요.");
             return;
         }
@@ -70,7 +75,6 @@ export default function IndexScreen() {
 
             let message = "알 수 없는 오류가 발생했습니다.";
 
-            // ✅ 에러 코드 매핑
             if (
                 error.code === "auth/invalid-email" &&
                 isValidEmail(trimmedEmail)
@@ -108,13 +112,37 @@ export default function IndexScreen() {
 
             <TextInput
                 style={styles.input}
-                placeholder="이메일"
-                value={email}
-                onChangeText={setEmail}
-                keyboardType="email-address"
+                placeholder="이메일 앞부분 (예: honggildong)"
+                value={emailLocal}
+                onChangeText={setEmailLocal}
                 autoCapitalize="none"
                 autoCorrect={false}
             />
+
+            <TouchableOpacity
+                onPress={() => setShowDomains(!showDomains)}
+                style={styles.input}
+            >
+                <Text>{emailDomain}</Text>
+            </TouchableOpacity>
+
+            {showDomains && (
+                <FlatList
+                    data={["@stu.jejunu.ac.kr", "@jejunu.ac.kr"]}
+                    keyExtractor={(item) => item}
+                    renderItem={({ item }) => (
+                        <TouchableOpacity
+                            style={styles.domainOption}
+                            onPress={() => {
+                                setEmailDomain(item);
+                                setShowDomains(false);
+                            }}
+                        >
+                            <Text>{item}</Text>
+                        </TouchableOpacity>
+                    )}
+                />
+            )}
 
             <TextInput
                 style={styles.input}
@@ -157,6 +185,7 @@ const styles = StyleSheet.create({
         borderRadius: 8,
         marginBottom: 15,
         fontSize: 16,
+        justifyContent: "center",
     },
     button: {
         width: width * 0.8,
@@ -178,5 +207,12 @@ const styles = StyleSheet.create({
     linkText: {
         color: "#007AFF",
         fontSize: 16,
+    },
+    domainOption: {
+        width: width * 0.8,
+        padding: 10,
+        borderBottomWidth: 1,
+        borderColor: "#ccc",
+        backgroundColor: "#f9f9f9",
     },
 });
