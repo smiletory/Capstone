@@ -1,4 +1,3 @@
-// app/auth/register.tsx
 import React, { useState } from "react";
 import {
     View,
@@ -9,6 +8,7 @@ import {
     StyleSheet,
     TouchableOpacity,
     FlatList,
+    Platform,
 } from "react-native";
 import { sendVerificationCode } from "../../utils/sendVerificationCode";
 import {
@@ -63,71 +63,62 @@ export default function RegisterScreen() {
         }
     };
 
-    const handleVerify = async () => {
-        if (code === generatedCode) {
-            try {
-                const signInMethods = await fetchSignInMethodsForEmail(
-                    auth,
-                    email
-                );
-                if (
-                    signInMethods.length > 0 &&
-                    signInMethods.includes("password")
-                ) {
-                    console.log("⚠️ 이미 가입된 이메일입니다:", email);
-                    Alert.alert(
-                        "이미 가입된 이메일입니다",
-                        "로그인 페이지로 이동해주세요."
-                    );
-                    return;
-                }
-
-                const userCredential = await createUserWithEmailAndPassword(
-                    auth,
-                    email,
-                    password
-                );
-
-                try {
-                    await setDoc(doc(db, "users", userCredential.user.uid), {
-                        email: userCredential.user.email,
-                        createdAt: new Date().toISOString(),
-                    });
-
-                    console.log(
-                        "🎉 회원가입 완료: ",
-                        userCredential.user.email
-                    );
-                    console.log("✅ router.replace 실행됨");
-
-                    //Alert.alert("🎉 인증 성공", "회원가입이 완료되었습니다.", [
-                    //    {
-                    //        text: "확인",
-                    //        onPress: () => router.replace("/main"),
-                    //    },
-                    //]);
-
-                    router.replace("/main");
-                } catch (firestoreError) {
-                    console.error("❌ Firestore 저장 실패:", firestoreError);
-                }
-            } catch (error: any) {
-                console.error("❌ 회원가입 실패:", error);
-                if (error.code === "auth/email-already-in-use") {
-                    console.log(
-                        "⚠️ 이미 가입된 이메일입니다 (가입 시도 중):",
-                        email
-                    );
-                    Alert.alert(
-                        "이미 가입된 이메일입니다",
-                        "로그인 페이지로 이동해주세요."
-                    );
-                } else {
-                    Alert.alert("❌ 회원가입 실패", error.message);
-                }
+    const handleVerifyOrRegister = async () => {
+        if (Platform.OS === "web") {
+            if (code !== generatedCode) {
+                Alert.alert("❌ 인증 실패", "인증코드가 일치하지 않습니다.");
+                return;
             }
-        } else {
-            Alert.alert("❌ 인증 실패", "인증코드가 일치하지 않습니다.");
+        }
+
+        try {
+            const signInMethods = await fetchSignInMethodsForEmail(auth, email);
+            if (
+                signInMethods.length > 0 &&
+                signInMethods.includes("password")
+            ) {
+                console.log("⚠️ 이미 가입된 이메일입니다:", email);
+                Alert.alert(
+                    "이미 가입된 이메일입니다",
+                    "로그인 페이지로 이동해주세요."
+                );
+                return;
+            }
+
+            const userCredential = await createUserWithEmailAndPassword(
+                auth,
+                email,
+                password
+            );
+
+            await setDoc(doc(db, "users", userCredential.user.uid), {
+                email: userCredential.user.email,
+                createdAt: new Date().toISOString(),
+            });
+
+            console.log("🎉 회원가입 완료:", userCredential.user.email);
+            console.log("✅ router.replace 실행됨");
+
+            if (Platform.OS === "web") {
+                router.replace("/main");
+            } else {
+                Alert.alert("🎉 회원가입 성공", "회원가입이 완료되었습니다.", [
+                    {
+                        text: "확인",
+                        onPress: () => router.replace("/main"),
+                    },
+                ]);
+            }
+        } catch (error: any) {
+            console.error("❌ 회원가입 실패:", error);
+            if (error.code === "auth/email-already-in-use") {
+                Alert.alert(
+                    "이미 가입된 이메일입니다",
+                    "로그인 페이지로 이동해주세요."
+                );
+            } else {
+                Alert.alert("❌ 회원가입 실패", error.message);
+            }
         }
     };
 
@@ -176,17 +167,26 @@ export default function RegisterScreen() {
                 style={styles.input}
             />
 
-            <Button title="인증코드 전송" onPress={handleSendCode} />
+            {/* 웹일 때만 인증코드 전송 */}
+            {Platform.OS === "web" && (
+                <>
+                    <Button title="인증코드 전송" onPress={handleSendCode} />
+                    <TextInput
+                        placeholder="인증코드 입력"
+                        value={code}
+                        onChangeText={setCode}
+                        keyboardType="number-pad"
+                        style={styles.input}
+                    />
+                </>
+            )}
 
-            <TextInput
-                placeholder="인증코드 입력"
-                value={code}
-                onChangeText={setCode}
-                keyboardType="number-pad"
-                style={styles.input}
+            <Button
+                title={
+                    Platform.OS === "web" ? "인증 확인 및 회원가입" : "회원가입"
+                }
+                onPress={handleVerifyOrRegister}
             />
-
-            <Button title="인증 확인 및 회원가입" onPress={handleVerify} />
 
             <TouchableOpacity
                 onPress={() => router.replace("/auth/login")}
