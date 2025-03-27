@@ -11,7 +11,7 @@ export default function Index() {
         const unsubscribe = onAuthStateChanged(auth, (user) => {
             if (user) {
                 // ✅ 로그인 상태 → 메인 페이지로 이동
-                router.replace("./main");
+                router.replace("./board/main");
             } else {
                 // ❌ 로그인 안 됨 → 로그인 페이지로 이동
                 router.replace("./auth/login");

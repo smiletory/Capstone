@@ -2,7 +2,7 @@ import React from "react";
 import { View, Text, StyleSheet, TouchableOpacity, Alert } from "react-native";
 import { useRouter } from "expo-router";
 import { signOut } from "firebase/auth";
-import { auth } from "../constants/firebaseConfig";
+import { auth } from "../../constants/firebaseConfig";
 
 export default function MainScreen() {
     const router = useRouter();

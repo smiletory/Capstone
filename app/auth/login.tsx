@@ -69,7 +69,7 @@ export default function IndexScreen() {
                 "로그인 성공",
                 `${userCredential.user.email}님 환영합니다!`
             );
-            router.replace("/main");
+            router.replace("./board/main");
         } catch (error: any) {
             console.log("❌ 로그인 실패:", error);
 

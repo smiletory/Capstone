@@ -100,12 +100,12 @@ export default function RegisterScreen() {
             console.log("✅ router.replace 실행됨");
 
             if (Platform.OS === "web") {
-                router.replace("/main");
+                router.replace("./board/main");
             } else {
                 Alert.alert("🎉 회원가입 성공", "회원가입이 완료되었습니다.", [
                     {
                         text: "확인",
-                        onPress: () => router.replace("/main"),
+                        onPress: () => router.replace("./board/main"),
                     },
                 ]);
             }
