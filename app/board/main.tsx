@@ -27,6 +27,8 @@ const categories = [
     "음식",
     "음료",
     "식권",
+    "의류",
+    "기타",
 ];
 const numColumns = 2;
 const { width } = Dimensions.get("window");

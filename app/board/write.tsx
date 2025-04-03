@@ -25,6 +25,8 @@ const categories = [
     "음식",
     "음료",
     "식권",
+    "의류",
+    "기타",
 ];
 
 export default function WriteScreen() {
