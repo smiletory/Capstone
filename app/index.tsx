@@ -29,5 +29,5 @@ export default function Index() {
         >
             <ActivityIndicator size="large" />
         </View>
-    );
+    );  
 }
