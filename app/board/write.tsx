@@ -151,7 +151,9 @@ export default function WriteScreen() {
     };
 
     const handleCategorySelect = (category: string) => {
-        if (selectedCategory && selectedCategory !== category) {
+        if (selectedCategory === category) {
+            setSelectedCategory(null); // 동일한 카테고리 클릭 시 해제
+        } else if (selectedCategory) {
             Alert.alert("카테고리 선택", "카테고리는 하나만 선택 가능합니다.");
         } else {
             setSelectedCategory(category);

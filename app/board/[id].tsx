@@ -8,9 +8,10 @@ import {
     ActivityIndicator,
     ScrollView,
     TouchableOpacity,
+    Alert,
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { doc, getDoc } from "firebase/firestore";
+import { doc, getDoc, deleteDoc } from "firebase/firestore";
 import { db } from "../../constants/firebaseConfig";
 
 export default function DetailScreen() {
@@ -41,6 +42,26 @@ export default function DetailScreen() {
 
         fetchItem();
     }, [id]);
+
+    const handleDelete = async () => {
+        Alert.alert("삭제 확인", "정말 삭제하시겠습니까?", [
+            { text: "취소", style: "cancel" },
+            {
+                text: "삭제",
+                style: "destructive",
+                onPress: async () => {
+                    try {
+                        await deleteDoc(doc(db, "items", String(id)));
+                        Alert.alert("삭제 완료", "글이 삭제되었습니다.");
+                        router.replace("/board/main");
+                    } catch (error) {
+                        console.error("❌ 삭제 오류:", error);
+                        Alert.alert("삭제 실패", "다시 시도해주세요.");
+                    }
+                },
+            },
+        ]);
+    };
 
     if (loading) {
         return (
@@ -73,9 +94,25 @@ export default function DetailScreen() {
                 </Text>
                 <Text style={styles.category}>📦 {item.category}</Text>
                 <Text style={styles.description}>{item.description}</Text>
+
+                {/* ✏️ 수정 버튼 */}
+                <TouchableOpacity
+                    style={styles.editButton}
+                    onPress={() => router.push(`/board/edit/${id}`)}
+                >
+                    <Text style={styles.editButtonText}>✏️ 수정</Text>
+                </TouchableOpacity>
+
+                {/* 🗑️ 삭제 버튼 */}
+                <TouchableOpacity
+                    style={styles.deleteButton}
+                    onPress={handleDelete}
+                >
+                    <Text style={styles.deleteButtonText}>🗑️ 삭제</Text>
+                </TouchableOpacity>
             </ScrollView>
 
-            {/* 👇 왼쪽 하단 고정 뒤로가기 버튼 */}
+            {/* 👈 왼쪽 하단 뒤로가기 버튼 */}
             <TouchableOpacity
                 style={styles.floatingBackButton}
                 onPress={() => router.back()}
@@ -119,6 +156,7 @@ const styles = StyleSheet.create({
     description: {
         fontSize: 16,
         lineHeight: 22,
+        marginBottom: 20,
     },
     floatingBackButton: {
         position: "absolute",
@@ -139,6 +177,27 @@ const styles = StyleSheet.create({
     floatingBackText: {
         color: "#fff",
         fontSize: 30,
+        fontWeight: "bold",
+    },
+    editButton: {
+        backgroundColor: "#007AFF",
+        padding: 12,
+        borderRadius: 8,
+        marginBottom: 10,
+        alignItems: "center",
+    },
+    editButtonText: {
+        color: "#fff",
+        fontWeight: "bold",
+    },
+    deleteButton: {
+        backgroundColor: "#FF3B30",
+        padding: 12,
+        borderRadius: 8,
+        alignItems: "center",
+    },
+    deleteButtonText: {
+        color: "#fff",
         fontWeight: "bold",
     },
 });
