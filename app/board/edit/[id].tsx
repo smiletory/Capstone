@@ -13,7 +13,7 @@ import {
 } from "react-native";
 import * as ImagePicker from "expo-image-picker";
 import { doc, getDoc, updateDoc } from "firebase/firestore";
-import { db } from "../../../constants/firebaseConfig";
+import { auth, db } from "../../../constants/firebaseConfig";
 import { useLocalSearchParams, useRouter } from "expo-router";
 
 const categories = [
@@ -50,6 +50,18 @@ export default function EditScreen() {
             const docSnap = await getDoc(docRef);
             if (docSnap.exists()) {
                 const data = docSnap.data();
+
+                // ✅ 작성자 본인 확인
+                const currentUser = auth.currentUser;
+                if (!currentUser || data.authorId !== currentUser.uid) {
+                    Alert.alert(
+                        "권한 오류",
+                        "본인이 작성한 글만 수정할 수 있습니다."
+                    );
+                    router.back();
+                    return;
+                }
+
                 setTitle(data.title);
                 setDescription(data.description);
                 setPrice(String(data.price));
@@ -116,7 +128,7 @@ export default function EditScreen() {
             Alert.alert("수정 완료", "물품이 수정되었습니다.", [
                 {
                     text: "확인",
-                    onPress: () => router.replace(`/board/${id}`),
+                    onPress: () => router.replace(`./board/${id}`),
                 },
             ]);
         } catch (error) {

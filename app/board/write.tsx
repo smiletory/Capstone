@@ -13,7 +13,7 @@ import {
 } from "react-native";
 import * as ImagePicker from "expo-image-picker";
 import { addDoc, collection, serverTimestamp } from "firebase/firestore";
-import { db } from "../../constants/firebaseConfig";
+import { auth, db } from "../../constants/firebaseConfig"; // ✅ auth import 추가
 import { useRouter } from "expo-router";
 
 const categories = [
@@ -127,6 +127,7 @@ export default function WriteScreen() {
                 imageUrl: imgurUrl,
                 category: selectedCategory,
                 createdAt: serverTimestamp(),
+                authorId: auth.currentUser?.uid, // ✅ 작성자 UID 추가
             });
 
             console.log("✅ Firestore 저장 성공");

@@ -12,13 +12,22 @@ import {
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { doc, getDoc, deleteDoc } from "firebase/firestore";
-import { db } from "../../constants/firebaseConfig";
+import { db, auth } from "../../constants/firebaseConfig"; // ✅ auth 추가
+import { onAuthStateChanged, User } from "firebase/auth";
 
 export default function DetailScreen() {
     const { id } = useLocalSearchParams();
     const router = useRouter();
     const [item, setItem] = useState<any>(null);
     const [loading, setLoading] = useState(true);
+    const [currentUser, setCurrentUser] = useState<User | null>(null); // ✅ 현재 로그인 사용자 저장
+
+    useEffect(() => {
+        const unsubscribe = onAuthStateChanged(auth, (user) => {
+            setCurrentUser(user);
+        });
+        return () => unsubscribe();
+    }, []);
 
     useEffect(() => {
         if (!id) return;
@@ -44,7 +53,12 @@ export default function DetailScreen() {
     }, [id]);
 
     const handleDelete = async () => {
-        Alert.alert("삭제 확인", "정말 삭제하시겠습니까?", [
+        if (item.authorId !== currentUser?.uid) {
+            Alert.alert("권한 없음", "이 글을 삭제할 권한이 없습니다.");
+            return;
+        }
+
+        Alert.alert("삭제 확인", "정말 삭제하시겠습니꼬?", [
             { text: "취소", style: "cancel" },
             {
                 text: "삭제",
@@ -79,6 +93,8 @@ export default function DetailScreen() {
         );
     }
 
+    const isOwner = item.authorId === currentUser?.uid;
+
     return (
         <View style={{ flex: 1 }}>
             <ScrollView contentContainerStyle={styles.container}>
@@ -95,24 +111,25 @@ export default function DetailScreen() {
                 <Text style={styles.category}>📦 {item.category}</Text>
                 <Text style={styles.description}>{item.description}</Text>
 
-                {/* ✏️ 수정 버튼 */}
-                <TouchableOpacity
-                    style={styles.editButton}
-                    onPress={() => router.push(`/board/edit/${id}`)}
-                >
-                    <Text style={styles.editButtonText}>✏️ 수정</Text>
-                </TouchableOpacity>
+                {isOwner && (
+                    <>
+                        <TouchableOpacity
+                            style={styles.editButton}
+                            onPress={() => router.push(`/board/edit/${id}`)}
+                        >
+                            <Text style={styles.editButtonText}>✏️ 수정</Text>
+                        </TouchableOpacity>
 
-                {/* 🗑️ 삭제 버튼 */}
-                <TouchableOpacity
-                    style={styles.deleteButton}
-                    onPress={handleDelete}
-                >
-                    <Text style={styles.deleteButtonText}>🗑️ 삭제</Text>
-                </TouchableOpacity>
+                        <TouchableOpacity
+                            style={styles.deleteButton}
+                            onPress={handleDelete}
+                        >
+                            <Text style={styles.deleteButtonText}>🗑️ 삭제</Text>
+                        </TouchableOpacity>
+                    </>
+                )}
             </ScrollView>
 
-            {/* 👈 왼쪽 하단 뒤로가기 버튼 */}
             <TouchableOpacity
                 style={styles.floatingBackButton}
                 onPress={() => router.back()}
