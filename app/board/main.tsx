@@ -17,6 +17,7 @@ import { useRouter, useFocusEffect } from "expo-router";
 import { collection, onSnapshot, query, orderBy } from "firebase/firestore";
 import { db } from "../../constants/firebaseConfig";
 
+
 const categories = [
     "전체",
     "전자제품",
