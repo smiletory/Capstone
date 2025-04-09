@@ -11,8 +11,15 @@ import {
     Alert,
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { doc, getDoc, deleteDoc } from "firebase/firestore";
-import { db, auth } from "../../constants/firebaseConfig"; // ✅ auth 추가
+import {
+    doc,
+    getDoc,
+    deleteDoc,
+    setDoc,
+    updateDoc,
+    serverTimestamp,
+} from "firebase/firestore";
+import { db, auth } from "../../constants/firebaseConfig";
 import { onAuthStateChanged, User } from "firebase/auth";
 
 export default function DetailScreen() {
@@ -20,7 +27,7 @@ export default function DetailScreen() {
     const router = useRouter();
     const [item, setItem] = useState<any>(null);
     const [loading, setLoading] = useState(true);
-    const [currentUser, setCurrentUser] = useState<User | null>(null); // ✅ 현재 로그인 사용자 저장
+    const [currentUser, setCurrentUser] = useState<User | null>(null);
 
     useEffect(() => {
         const unsubscribe = onAuthStateChanged(auth, (user) => {
@@ -58,7 +65,7 @@ export default function DetailScreen() {
             return;
         }
 
-        Alert.alert("삭제 확인", "정말 삭제하시겠습니꼬?", [
+        Alert.alert("삭제 확인", "정말 삭제하시겠습니까?", [
             { text: "취소", style: "cancel" },
             {
                 text: "삭제",
@@ -75,6 +82,27 @@ export default function DetailScreen() {
                 },
             },
         ]);
+    };
+
+    const handleChat = async () => {
+        if (!currentUser || !item || !id) return;
+
+        const chatId = `${id}_${currentUser.uid}_${item.authorId}`;
+        const chatRef = doc(db, "chats", chatId);
+        const chatSnap = await getDoc(chatRef);
+
+        if (!chatSnap.exists()) {
+            await setDoc(chatRef, {
+                postId: id,
+                itemTitle: item.title,
+                participants: [currentUser.uid, item.authorId],
+                users: [{ uid: currentUser.uid }, { uid: item.authorId }],
+                updatedAt: serverTimestamp(),
+                lastMessage: "",
+            });
+        }
+
+        router.push(`/board/chat/${chatId}`);
     };
 
     if (loading) {
@@ -127,6 +155,15 @@ export default function DetailScreen() {
                             <Text style={styles.deleteButtonText}>🗑️ 삭제</Text>
                         </TouchableOpacity>
                     </>
+                )}
+
+                {!isOwner && currentUser && (
+                    <TouchableOpacity
+                        style={styles.chatButton}
+                        onPress={handleChat}
+                    >
+                        <Text style={styles.chatButtonText}>💬 채팅하기</Text>
+                    </TouchableOpacity>
                 )}
             </ScrollView>
 
@@ -214,6 +251,17 @@ const styles = StyleSheet.create({
         alignItems: "center",
     },
     deleteButtonText: {
+        color: "#fff",
+        fontWeight: "bold",
+    },
+    chatButton: {
+        backgroundColor: "#34C759",
+        padding: 12,
+        borderRadius: 8,
+        marginTop: 10,
+        alignItems: "center",
+    },
+    chatButtonText: {
         color: "#fff",
         fontWeight: "bold",
     },
