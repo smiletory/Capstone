@@ -20,7 +20,6 @@ import {
     getDoc,
     updateDoc,
     getDocs,
-    arrayUnion,
     serverTimestamp,
 } from "firebase/firestore";
 import { db } from "../../constants/firebaseConfig";
@@ -149,37 +148,47 @@ export default function ChatListScreen() {
                     data={chats}
                     keyExtractor={(item) => item.id}
                     renderItem={({ item }) => (
-                        <TouchableOpacity
-                            onPress={() => router.push(`./chat/${item.id}`)}
-                            onLongPress={() => handleLeaveChat(item.id)}
-                            style={styles.chatItem}
+                        <View
+                            style={[
+                                styles.chatItemWrapper,
+                                Number(item.unreadCount) > 0 &&
+                                    styles.unreadBackground,
+                            ]}
                         >
-                            <View style={styles.chatHeader}>
-                                <Text style={styles.name}>
-                                    {item.postTitle}
-                                </Text>
-                                {item.unreadCount > 0 && (
-                                    <View style={styles.newBadge}>
-                                        <Text style={styles.newText}>New</Text>
-                                    </View>
+                            <TouchableOpacity
+                                onPress={() => router.push(`./chat/${item.id}`)}
+                                onLongPress={() => handleLeaveChat(item.id)}
+                                style={styles.chatItem}
+                            >
+                                <View style={styles.chatHeader}>
+                                    <Text style={styles.name}>
+                                        {item.postTitle}
+                                    </Text>
+                                    {Number(item.unreadCount) > 0 && (
+                                        <View style={styles.newBadge}>
+                                            <Text style={styles.newText}>
+                                                New
+                                            </Text>
+                                        </View>
+                                    )}
+                                </View>
+                                {item.warningText && (
+                                    <Text style={styles.noticeText}>
+                                        {item.warningText}
+                                    </Text>
                                 )}
-                            </View>
-                            {item.warningText && (
-                                <Text style={styles.noticeText}>
-                                    {item.warningText}
+                                <Text style={styles.message}>
+                                    {item.lastMessage || "메시지 없음"}
                                 </Text>
-                            )}
-                            <Text style={styles.message}>
-                                {item.lastMessage || "메시지 없음"}
-                            </Text>
-                            {item.updatedAt?.toDate && (
-                                <Text style={styles.timestamp}>
-                                    {item.updatedAt
-                                        .toDate()
-                                        .toLocaleString("ko-KR")}
-                                </Text>
-                            )}
-                        </TouchableOpacity>
+                                {item.updatedAt?.toDate && (
+                                    <Text style={styles.timestamp}>
+                                        {item.updatedAt
+                                            .toDate()
+                                            .toLocaleString("ko-KR")}
+                                    </Text>
+                                )}
+                            </TouchableOpacity>
+                        </View>
                     )}
                     contentContainerStyle={{ paddingBottom: 20 }}
                 />
@@ -199,10 +208,15 @@ const styles = StyleSheet.create({
         fontWeight: "bold",
         marginBottom: 16,
     },
-    chatItem: {
-        padding: 12,
+    chatItemWrapper: {
         borderBottomWidth: 1,
         borderBottomColor: "#eee",
+    },
+    chatItem: {
+        padding: 12,
+    },
+    unreadBackground: {
+        backgroundColor: "#D0E7FF",
     },
     chatHeader: {
         flexDirection: "row",
