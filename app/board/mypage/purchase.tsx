@@ -13,32 +13,39 @@ import {
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 
-export default function PurchaseHistoryScreen() {
+export default function PurchaseHistoryScreen() { // 구매내역 조회
     const router = useRouter();
+    const [items, setItems] = React.useState<any[]>([]);
+    const [loading, setLoading] = React.useState(true);
 
-    const items = [
-        {
-            id: "1",
-            title: "무선 마우스",
-            description: "전자기기 / 새상품",
-            image: "https://via.placeholder.com/60",
-            date: "2025.04.05",
-        },
-        {
-            id: "2",
-            title: "노트북 파우치",
-            description: "파우치 / 중고",
-            image: "https://via.placeholder.com/60",
-            date: "2025.03.30",
-        },
-        {
-            id: "3",
-            title: "핸드폰 거치대",
-            description: "거치용 / 새상품",
-            image: "https://via.placeholder.com/60",
-            date: "2025.03.28",
-        },
-    ];
+    useEffect(() => {
+        const fetchItems = async () => {
+            try {
+                setLoading(true);
+                const currentUser = getAuth().currentUser;
+                if (!currentUser) return;
+
+                const q = query(
+                    collection(db, "items"),
+                    where("buyerId", "==", currentUser.uid)
+                );
+                const querySnapshot = await getDocs(q);
+                const fetchedItems = querySnapshot.docs.map((doc) => ({
+                    id : doc.id,
+                    title : doc.data().title,
+                    description : doc.data().description,
+                    image : "https://via.placeholder.com/60",
+                    date : doc.data().date
+                }));
+                setItems(fetchedItems);
+            } catch (error) {
+                console.error("❌ 구매내역 불러오기 오류:", error);
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchItems();
+    }, []);
 
     return (
         <View style={styles.container}>
