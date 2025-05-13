@@ -1,7 +1,7 @@
 // app/board/mypage/purchase.tsx
 // 마이페이지 -> 구매내역 화면
 
-import React from "react";
+import React, { useEffect } from "react";
 import {
     View,
     Text,
@@ -12,6 +12,9 @@ import {
 } from "react-native";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
+import { getAuth } from "firebase/auth";
+import { query, where, collection, getDocs } from "firebase/firestore";
+import { db } from "@/constants/firebaseConfig";
 
 export default function PurchaseHistoryScreen() { // 구매내역 조회
     const router = useRouter();
