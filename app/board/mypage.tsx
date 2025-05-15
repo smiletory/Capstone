@@ -71,7 +71,7 @@ export default function MyPageScreen() {
                 />
                 <MenuItem
                     label="공지사항"
-                    onPress={() => router.push("/board/mypage/notice")}
+                    onPress={() => router.push("/board/mypage/notice/notice")}
                 />
                 <MenuItem
                     label="앱설정"
