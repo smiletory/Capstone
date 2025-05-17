@@ -12,6 +12,7 @@ import {
 import { signInWithEmailAndPassword } from "firebase/auth";
 import { useRouter } from "expo-router";
 import { auth } from "../../constants/firebaseConfig";
+import { registerForPushNotificationsAsync } from "../../utils/notifications"; // ✅ 유틸 불러오기
 
 const { width } = Dimensions.get("window");
 
@@ -36,10 +37,6 @@ export default function IndexScreen() {
         console.log("🟢 로그인 버튼 눌림");
         console.log("📧 입력된 이메일:", `[${trimmedEmail}]`);
         console.log("🔑 입력된 비밀번호:", `[${trimmedPassword}]`);
-        console.log(
-            "🚨 Firebase에 전달할 이메일:",
-            JSON.stringify(trimmedEmail)
-        );
 
         if (!emailLocal) {
             Alert.alert("입력 오류", "이메일을 입력해주세요.");
@@ -64,6 +61,9 @@ export default function IndexScreen() {
                 trimmedPassword
             );
             console.log("✅ 로그인 성공:", userCredential.user.email);
+
+            // ✅ 푸시 토큰 등록 및 저장
+            await registerForPushNotificationsAsync();
 
             Alert.alert(
                 "로그인 성공",

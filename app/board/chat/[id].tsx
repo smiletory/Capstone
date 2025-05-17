@@ -1,4 +1,3 @@
-// app/board/chat/[id].tsx
 import React, { useEffect, useState, useRef } from "react";
 import {
     View,
@@ -24,6 +23,7 @@ import {
 } from "firebase/firestore";
 import { db } from "../../../constants/firebaseConfig";
 import { getAuth } from "firebase/auth";
+import { registerForPushNotificationsAsync, sendPushNotification } from "../../../utils/notifications";
 
 export default function ChatRoom() {
     const { id } = useLocalSearchParams();
@@ -35,6 +35,10 @@ export default function ChatRoom() {
     const [blockedReason, setBlockedReason] = useState<string | null>(null);
     const flatListRef = useRef<FlatList>(null);
     const currentUserId = getAuth().currentUser?.uid;
+
+    useEffect(() => {
+        registerForPushNotificationsAsync();
+    }, []);
 
     useEffect(() => {
         if (!id) return;
@@ -74,30 +78,22 @@ export default function ChatRoom() {
                         setChatTitle(postDoc.data().title);
                     } else {
                         setChatTitle("게시글 없음");
-                        setBlockedReason(
-                            "게시글이 없어 채팅을 보낼 수 없습니다"
-                        );
+                        setBlockedReason("게시글이 없어 채팅을 보낼 수 없습니다");
                         return;
                     }
 
                     const participants = chatData.participants || [];
                     if (!participants.includes(currentUserId)) {
                         setChatTitle("채팅방 정보 없음");
-                        setBlockedReason(
-                            "채팅방 정보가 없어 채팅을 보낼 수 없습니다"
-                        );
+                        setBlockedReason("채팅방 정보가 없어 채팅을 보낼 수 없습니다");
                         return;
                     } else if (participants.length === 1) {
                         setOtherUserLeft(true);
-                        setBlockedReason(
-                            "상대방이 나가 채팅을 보낼 수 없습니다"
-                        );
+                        setBlockedReason("상대방이 나가 채팅을 보낼 수 없습니다");
                     }
                 } else {
                     setChatTitle("채팅방 정보 없음");
-                    setBlockedReason(
-                        "채팅방 정보가 없어 채팅을 보낼 수 없습니다"
-                    );
+                    setBlockedReason("채팅방 정보가 없어 채팅을 보낼 수 없습니다");
                 }
             } catch (error) {
                 console.error("❌ 제목 불러오기 실패:", error);
@@ -125,6 +121,15 @@ export default function ChatRoom() {
         });
 
         setText("");
+
+        // 상대방 푸시 알림
+        const chatDoc = await getDoc(doc(db, "chats", String(id)));
+        const participants = chatDoc.data()?.participants || [];
+        const otherUserId = participants.find((uid: string) => uid !== currentUserId);
+
+        if (otherUserId) {
+            await sendPushNotification(otherUserId, text);
+        }
     };
 
     return (
@@ -180,8 +185,7 @@ export default function ChatRoom() {
                             const chatSnap = await getDoc(chatRef);
                             const current = chatSnap.data();
 
-                            if (!currentUserId || !current?.participants)
-                                return;
+                            if (!currentUserId || !current?.participants) return;
 
                             const updatedParticipants =
                                 current.participants.filter(
@@ -228,20 +232,9 @@ export default function ChatRoom() {
 }
 
 const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        backgroundColor: "#fff",
-    },
-    header: {
-        padding: 15,
-        backgroundColor: "#007AFF",
-        alignItems: "center",
-    },
-    headerText: {
-        color: "#fff",
-        fontSize: 18,
-        fontWeight: "bold",
-    },
+    container: { flex: 1, backgroundColor: "#fff" },
+    header: { padding: 15, backgroundColor: "#007AFF", alignItems: "center" },
+    headerText: { color: "#fff", fontSize: 18, fontWeight: "bold" },
     noticeText: {
         textAlign: "center",
         color: "#FF3B30",
@@ -264,9 +257,7 @@ const styles = StyleSheet.create({
         backgroundColor: "#e5e5ea",
         borderTopLeftRadius: 0,
     },
-    messageText: {
-        color: "#fff",
-    },
+    messageText: { color: "#fff" },
     inputContainer: {
         flexDirection: "row",
         borderTopWidth: 1,
@@ -288,18 +279,12 @@ const styles = StyleSheet.create({
         paddingHorizontal: 15,
         justifyContent: "center",
     },
-    leaveContainer: {
-        alignItems: "center",
-        marginVertical: 16,
-    },
+    leaveContainer: { alignItems: "center", marginVertical: 16 },
     leaveButton: {
         backgroundColor: "#FF3B30",
         paddingHorizontal: 20,
         paddingVertical: 10,
         borderRadius: 20,
     },
-    leaveButtonText: {
-        color: "#fff",
-        fontWeight: "bold",
-    },
+    leaveButtonText: { color: "#fff", fontWeight: "bold" },
 });

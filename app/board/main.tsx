@@ -151,7 +151,7 @@ export default function MainScreen() {
         <Container>
             <Header>
                 <Logo>🛍️</Logo>
-                <HeaderTitle>하영 마켓</HeaderTitle>
+                <HeaderTitle>정들엉</HeaderTitle>
                 <HeaderIcons>
                     <IconButton>
                         <Ionicons

@@ -18,6 +18,7 @@ import {
 import { auth, db } from "../../constants/firebaseConfig";
 import { doc, setDoc } from "firebase/firestore";
 import { useRouter } from "expo-router";
+import { registerForPushNotificationsAsync } from "../../utils/notifications"; // ✅ 추가
 
 export default function RegisterScreen() {
     const [emailLocal, setEmailLocal] = useState("");
@@ -45,18 +46,13 @@ export default function RegisterScreen() {
             return;
         }
 
-        const randomCode = Math.floor(
-            100000 + Math.random() * 900000
-        ).toString();
+        const randomCode = Math.floor(100000 + Math.random() * 900000).toString();
         setGeneratedCode(randomCode);
         console.log("📩 생성된 인증코드:", randomCode);
 
         try {
             await sendVerificationCode(email, randomCode);
-            Alert.alert(
-                "✅ 인증코드 발송 완료",
-                `${email}로 인증코드가 전송되었습니다.`
-            );
+            Alert.alert("✅ 인증코드 발송 완료", `${email}로 인증코드가 전송되었습니다.`);
         } catch (error) {
             console.error("❌ 인증코드 전송 실패:", error);
             Alert.alert("❌ 전송 실패", "이메일 전송 중 오류가 발생했습니다.");
@@ -73,31 +69,22 @@ export default function RegisterScreen() {
 
         try {
             const signInMethods = await fetchSignInMethodsForEmail(auth, email);
-            if (
-                signInMethods.length > 0 &&
-                signInMethods.includes("password")
-            ) {
-                console.log("⚠️ 이미 가입된 이메일입니다:", email);
-                Alert.alert(
-                    "이미 가입된 이메일입니다",
-                    "로그인 페이지로 이동해주세요."
-                );
+            if (signInMethods.length > 0 && signInMethods.includes("password")) {
+                Alert.alert("이미 가입된 이메일입니다", "로그인 페이지로 이동해주세요.");
                 return;
             }
 
-            const userCredential = await createUserWithEmailAndPassword(
-                auth,
-                email,
-                password
-            );
+            const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+            const uid = userCredential.user.uid;
 
-            await setDoc(doc(db, "users", userCredential.user.uid), {
+            // ✅ 푸시 토큰 발급 및 저장
+            const token = await registerForPushNotificationsAsync();
+
+            await setDoc(doc(db, "users", uid), {
                 email: userCredential.user.email,
                 createdAt: new Date().toISOString(),
+                expoPushToken: token ?? null, // token이 없을 수도 있음
             });
-
-            console.log("🎉 회원가입 완료:", userCredential.user.email);
-            console.log("✅ router.replace 실행됨");
 
             if (Platform.OS === "web") {
                 router.replace("./board/main");
@@ -112,10 +99,7 @@ export default function RegisterScreen() {
         } catch (error: any) {
             console.error("❌ 회원가입 실패:", error);
             if (error.code === "auth/email-already-in-use") {
-                Alert.alert(
-                    "이미 가입된 이메일입니다",
-                    "로그인 페이지로 이동해주세요."
-                );
+                Alert.alert("이미 가입된 이메일입니다", "로그인 페이지로 이동해주세요.");
             } else {
                 Alert.alert("❌ 회원가입 실패", error.message);
             }
@@ -167,7 +151,6 @@ export default function RegisterScreen() {
                 style={styles.input}
             />
 
-            {/* 웹일 때만 인증코드 전송 */}
             {Platform.OS === "web" && (
                 <>
                     <Button title="인증코드 전송" onPress={handleSendCode} />

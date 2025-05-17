@@ -6,6 +6,8 @@ export const COLORS = {
   darkText: "#1F2937",
   grayText: "#6B7280",
   border: "#BFBFBF",
+  softWhite: "#FFF9F4",
+  accent: "#FFD6C0",
 };
 
 export const SHADOW = {
