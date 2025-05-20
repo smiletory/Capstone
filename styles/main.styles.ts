@@ -158,3 +158,16 @@ export const ScrollTopText = styled.Text`
     color: white;
     font-size: 16px;
 `;
+
+export const FavoriteButton = styled.TouchableOpacity`
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 36px;
+  height: 36px;
+  border-radius: 18px;
+  background-color: rgba(255, 255, 255, 0.8);
+  justify-content: center;
+  align-items: center;
+  z-index: 1;
+`;
