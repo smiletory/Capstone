@@ -1,5 +1,5 @@
 // app/board/main.tsx
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState, useRef, useCallback } from "react";
 import {
     Animated,
     FlatList,
@@ -7,10 +7,13 @@ import {
     Keyboard,
     NativeSyntheticEvent,
     NativeScrollEvent,
+    TouchableOpacity,
 } from "react-native";
-import { useRouter, useFocusEffect } from "expo-router";
-import { collection, onSnapshot, query, orderBy } from "firebase/firestore";
+import { useRouter} from "expo-router";
+import { collection, onSnapshot, query, orderBy, doc, getDoc, updateDoc, setDoc, arrayUnion, arrayRemove } from "firebase/firestore";
 import { db } from "../../constants/firebaseConfig";
+import { getAuth } from "firebase/auth";
+import { deleteDoc } from "firebase/firestore"; 
 
 import {
     Container,
@@ -34,8 +37,10 @@ import {
     HeaderTitle,
     HeaderIcons,
     IconButton,
+    FavoriteButton,
 } from "../../styles/main.styles";
 import { Ionicons } from "@expo/vector-icons";
+import { useFocusEffect } from '@react-navigation/native';
 
 const categories = [
     "전체",
@@ -60,6 +65,7 @@ export default function MainScreen() {
     const [refreshing, setRefreshing] = useState(false);
     const [showScrollTopButton, setShowScrollTopButton] = useState(false);
     const [isScrollTracking, setIsScrollTracking] = useState(true);
+    const [favorites, setFavorites] = useState<string[]>([]);
 
     const scrollOffsetRef = useRef(0);
     const flatListRef = useRef<FlatList>(null);
@@ -67,6 +73,7 @@ export default function MainScreen() {
     const scrollTopButtonPosition = useRef(new Animated.Value(0)).current;
     const searchBarHeight = useRef(new Animated.Value(0)).current;
     const router = useRouter();
+    const auth = getAuth();
 
     const fetchData = () => {
         const q = query(collection(db, "items"), orderBy("createdAt", "desc"));
@@ -80,21 +87,88 @@ export default function MainScreen() {
         });
     };
 
+    // 사용자의 관심목록 불러오기
+    const fetchFavorites = useCallback(async () => {
+        if (!auth.currentUser) return;
+
+        try {
+            const userRef = doc(db, "users", auth.currentUser.uid);
+            const userSnap = await getDoc(userRef);
+            
+            if (userSnap.exists() && userSnap.data().favorites) {
+                setFavorites(userSnap.data().favorites);
+            } else {
+                // 관심목록이 없으면 빈 배열로 초기화
+                await setDoc(userRef, { favorites: [] }, { merge: true });
+                setFavorites([]);
+            }
+        } catch (error) {
+            console.error("관심목록을 불러오는 중 오류 발생:", error);
+        }
+    }, [auth.currentUser]);
+
     useEffect(() => {
         const unsubscribe = fetchData();
+        fetchFavorites();
         return () => unsubscribe();
-    }, []);
+    }, [fetchFavorites]);
 
+    // 관심목록 화면에서 돌아왔을 때도 관심목록 새로고침
     useFocusEffect(
-        React.useCallback(() => {
+        useCallback(() => {
+            fetchFavorites();
             setTimeout(() => {
                 flatListRef.current?.scrollToOffset({
                     offset: scrollOffsetRef.current,
                     animated: false,
                 });
             }, 50);
-        }, [])
+        }, [fetchFavorites])
     );
+
+    // 관심목록 토글 함수
+    const toggleFavorite = async (itemId: string, itemData: any) => {
+        if (!auth.currentUser) {
+            // 로그인 상태가 아니면 로그인 페이지로 이동
+            alert("관심목록을 사용하려면 로그인이 필요합니다.");
+            router.push("/auth/login");
+            return;
+        }
+
+        try {
+            const userRef = doc(db, "users", auth.currentUser.uid);
+            const favoriteItemRef = doc(db, "users", auth.currentUser.uid, "favoriteItems", itemId);
+
+            if (favorites.includes(itemId)) {
+                // 관심목록에서 제거
+                await updateDoc(userRef, {
+                    favorites: arrayRemove(itemId),
+                });
+                //여기
+                await deleteDoc(favoriteItemRef);
+                setFavorites(prev => prev.filter(id => id !== itemId));
+            } else {
+                // 관심목록에 추가
+                await updateDoc(userRef, {
+                    favorites: arrayUnion(itemId),
+                });
+
+                // 관심목록에 필요한 상품 정보 저장
+                await setDoc(favoriteItemRef, {
+                    id: itemId,
+                    title: itemData.title,
+                    description: `${itemData.category} / ${itemData.condition || "상품"}`,
+                    image: itemData.imageUrl,
+                    addedAt: new Date(),
+                });
+                
+                setFavorites(prev => [...prev, itemId]);
+            }
+        } catch (error) {
+            console.error("관심목록 업데이트 중 오류 발생:", error);
+            alert("관심목록 업데이트에 실패했습니다. 다시 시도해주세요.");
+        }
+    };
 
     const filteredItems = items.filter((item) => {
         const matchesCategory =
@@ -147,12 +221,28 @@ export default function MainScreen() {
         scrollOffsetRef.current = 0;
     };
 
+    const navigateToMyFavorites = () => {
+        if (!auth.currentUser) {
+            alert("관심목록을 보려면 로그인이 필요합니다.");
+            router.push("/auth/login");
+            return;
+        }
+        router.push("./mypage/favorite");
+    };
+
     return (
         <Container>
             <Header>
                 <Logo>🛍️</Logo>
                 <HeaderTitle>하영 마켓</HeaderTitle>
                 <HeaderIcons>
+                    <IconButton onPress={navigateToMyFavorites}>
+                        <Ionicons
+                            name="heart-outline"
+                            size={30}
+                            color="black"
+                        />
+                    </IconButton>
                     <IconButton>
                         <Ionicons
                             name="notifications-outline"
@@ -210,7 +300,22 @@ export default function MainScreen() {
                     onScroll={handleScroll}
                     onMomentumScrollEnd={handleScrollEnd}
                     renderItem={({ item }) => (
-                        <ItemBox onPress={() => router.push(`./${item.id}`)}>
+                        <ItemBox>
+                        {/* 관심목록 버튼 (위로 꺼내기) */}
+                        <FavoriteButton onPress={() => toggleFavorite(item.id, item)}>
+                            <Ionicons
+                                name={favorites.includes(item.id) ? "heart" : "heart-outline"}
+                                size={24}
+                                color={favorites.includes(item.id) ? "#FF6347" : "#888"}
+                            />
+                        </FavoriteButton>
+                    
+                        {/* 상품 클릭 영역 */}
+                        <TouchableOpacity 
+                            style={{ width: "100%", height: "100%" }}
+                            onPress={() => router.push(`./${item.id}`)}
+                            activeOpacity={0.8}
+                        >
                             {item.imageUrl && (
                                 <ItemImage source={{ uri: item.imageUrl }} />
                             )}
@@ -221,12 +326,18 @@ export default function MainScreen() {
                                 💰 {item.price?.toLocaleString()}원
                             </PriceText>
                             <ItemCategory>📦 {item.category}</ItemCategory>
-                        </ItemBox>
+                        </TouchableOpacity>
+                    </ItemBox>
+                    
                     )}
                     refreshControl={
                         <RefreshControl
                             refreshing={refreshing}
-                            onRefresh={fetchData}
+                            onRefresh={() => {
+                                setRefreshing(true);
+                                fetchData();
+                                fetchFavorites();
+                            }}
                         />
                     }
                     contentContainerStyle={{ paddingBottom: 120 }}
