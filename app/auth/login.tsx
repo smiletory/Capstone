@@ -5,12 +5,12 @@ import {
     TextInput,
     TouchableOpacity,
     StyleSheet,
+    Image,
     Alert,
     Dimensions,
-    FlatList,
 } from "react-native";
-import { signInWithEmailAndPassword } from "firebase/auth";
 import { useRouter } from "expo-router";
+import { signInWithEmailAndPassword } from "firebase/auth";
 import { auth } from "../../constants/firebaseConfig";
 
 const { width } = Dimensions.get("window");
@@ -36,10 +36,6 @@ export default function IndexScreen() {
         console.log("🟢 로그인 버튼 눌림");
         console.log("📧 입력된 이메일:", `[${trimmedEmail}]`);
         console.log("🔑 입력된 비밀번호:", `[${trimmedPassword}]`);
-        console.log(
-            "🚨 Firebase에 전달할 이메일:",
-            JSON.stringify(trimmedEmail)
-        );
 
         if (!emailLocal) {
             Alert.alert("입력 오류", "이메일을 입력해주세요.");
@@ -57,14 +53,11 @@ export default function IndexScreen() {
         }
 
         try {
-            console.log("🚀 Firebase 로그인 시도...");
             const userCredential = await signInWithEmailAndPassword(
                 auth,
                 trimmedEmail,
                 trimmedPassword
             );
-            console.log("✅ 로그인 성공:", userCredential.user.email);
-
             Alert.alert(
                 "로그인 성공",
                 `${userCredential.user.email}님 환영합니다!`
@@ -75,26 +68,19 @@ export default function IndexScreen() {
 
             let message = "알 수 없는 오류가 발생했습니다.";
 
-            if (
-                error.code === "auth/invalid-email" &&
-                isValidEmail(trimmedEmail)
-            ) {
-                message = "가입된 사용자를 찾을 수 없습니다.";
-            } else {
-                switch (error.code) {
-                    case "auth/invalid-email":
-                        message = "이메일 형식이 올바르지 않습니다.";
-                        break;
-                    case "auth/user-not-found":
-                        message = "가입된 사용자를 찾을 수 없습니다.";
-                        break;
-                    case "auth/wrong-password":
-                        message = "비밀번호가 일치하지 않습니다.";
-                        break;
-                    case "auth/invalid-credential":
-                        message = "잘못된 이메일 또는 비밀번호입니다.";
-                        break;
-                }
+            switch (error.code) {
+                case "auth/invalid-email":
+                    message = "이메일 형식이 올바르지 않습니다.";
+                    break;
+                case "auth/user-not-found":
+                    message = "가입된 사용자를 찾을 수 없습니다.";
+                    break;
+                case "auth/wrong-password":
+                    message = "비밀번호가 일치하지 않습니다.";
+                    break;
+                case "auth/invalid-credential":
+                    message = "잘못된 이메일 또는 비밀번호입니다.";
+                    break;
             }
 
             Alert.alert("로그인 실패", message);
@@ -102,64 +88,75 @@ export default function IndexScreen() {
     };
 
     const goToRegister = () => {
-        console.log("➡️ 회원가입 페이지로 이동");
         router.push("./register");
     };
 
     return (
         <View style={styles.container}>
-            <Text style={styles.title}>🔐 로그인</Text>
-
-            <TextInput
-                style={styles.input}
-                placeholder="이메일 앞부분 (예: honggildong)"
-                value={emailLocal}
-                onChangeText={setEmailLocal}
-                autoCapitalize="none"
-                autoCorrect={false}
+            <Image
+                source={require("../../assets/in_symbol.png")}
+                style={styles.logo}
+                resizeMode="contain"
             />
+            <Text style={styles.title}>하영 마켓</Text>
+            <Text style={styles.subtitle}>LOG IN</Text>
 
-            <TouchableOpacity
-                onPress={() => setShowDomains(!showDomains)}
-                style={styles.input}
-            >
-                <Text>{emailDomain}</Text>
-            </TouchableOpacity>
+            {/* 이메일 입력과 도메인 선택 */}
+            <View style={styles.row}>
+                <TextInput
+                    style={[styles.input, styles.inputHalf]}
+                    placeholder="이메일"
+                    value={emailLocal}
+                    onChangeText={setEmailLocal}
+                />
+                <TouchableOpacity
+                    style={[styles.comboBox, styles.inputHalf]}
+                    onPress={() => setShowDomains(!showDomains)}
+                >
+                    <Text style={styles.comboBoxText}>{emailDomain}</Text>
+                    <Image
+                        source={require("../../assets/down-arrow.png")}
+                        style={styles.arrowIcon}
+                    />
+                </TouchableOpacity>
+            </View>
 
+            {/* 드롭다운 */}
             {showDomains && (
-                <FlatList
-                    data={["@stu.jejunu.ac.kr", "@jejunu.ac.kr"]}
-                    keyExtractor={(item) => item}
-                    renderItem={({ item }) => (
+                <View style={styles.dropdown}>
+                    {["@stu.jejunu.ac.kr", "@jejunu.ac.kr"].map((domain) => (
                         <TouchableOpacity
-                            style={styles.domainOption}
+                            key={domain}
                             onPress={() => {
-                                setEmailDomain(item);
+                                setEmailDomain(domain);
                                 setShowDomains(false);
                             }}
+                            style={styles.dropdownItem}
                         >
-                            <Text>{item}</Text>
+                            <Text>{domain}</Text>
                         </TouchableOpacity>
-                    )}
-                />
+                    ))}
+                </View>
             )}
 
+            {/* 비밀번호 */}
             <TextInput
                 style={styles.input}
                 placeholder="비밀번호"
                 value={password}
                 onChangeText={setPassword}
                 secureTextEntry
-                autoCorrect={false}
             />
 
-            <TouchableOpacity style={styles.button} onPress={handleLogin}>
-                <Text style={styles.buttonText}>로그인</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity style={styles.linkButton} onPress={goToRegister}>
-                <Text style={styles.linkText}>계정이 없으신가요? 회원가입</Text>
-            </TouchableOpacity>
+            {/* 버튼 */}
+            <View style={styles.buttonContainer}>
+                <TouchableOpacity style={styles.button} onPress={handleLogin}>
+                    <Text style={styles.buttonText}>로그인</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.button} onPress={goToRegister}>
+                    <Text style={styles.buttonText}>회원가입</Text>
+                </TouchableOpacity>
+            </View>
         </View>
     );
 }
@@ -168,51 +165,108 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: "#fff",
-        paddingTop: 100,
         alignItems: "center",
+        justifyContent: "center",
+        paddingHorizontal: 20,
+    },
+    logo: {
+        width: 200,
+        height: 150,
+        marginBottom: 10,
     },
     title: {
+        fontFamily: "Jua",
+        fontSize: 40,
+        marginBottom: 10,
+        color: "#000",
+    },
+    subtitle: {
+        fontFamily: "Jua",
         fontSize: 28,
-        marginBottom: 40,
-        fontWeight: "bold",
+        marginBottom: 30,
+        color: "#000",
+    },
+    row: {
+        flexDirection: "row",
+        justifyContent: "space-between",
+        width: "90%",
+        marginBottom: 15,
     },
     input: {
-        width: width * 0.8,
-        height: 50,
-        borderColor: "#ccc",
+        width: "90%",
+        height: 55,
+        borderColor: "#BDBDBD",
         borderWidth: 1,
+        borderRadius: 8,
         paddingHorizontal: 15,
-        borderRadius: 8,
+        backgroundColor: "#fff",
+        fontSize: 18,
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+        elevation: 2,
         marginBottom: 15,
-        fontSize: 16,
-        justifyContent: "center",
     },
-    button: {
-        width: width * 0.8,
-        height: 50,
-        backgroundColor: "#007AFF",
-        borderRadius: 8,
-        justifyContent: "center",
-        alignItems: "center",
+    inputHalf: {
+        width: "48%",
+        marginBottom: 0,
+    },
+    buttonContainer: {
+        flexDirection: "row",
+        justifyContent: "space-between",
+        width: "90%",
         marginTop: 10,
     },
+    button: {
+        flex: 1,
+        backgroundColor: "#03A3FD",
+        paddingVertical: 14,
+        marginHorizontal: 5,
+        borderRadius: 8,
+        alignItems: "center",
+    },
     buttonText: {
-        color: "#fff",
         fontSize: 18,
-        fontWeight: "600",
+        fontWeight: "bold",
+        color: "#000",
     },
-    linkButton: {
-        marginTop: 20,
-    },
-    linkText: {
-        color: "#007AFF",
-        fontSize: 16,
-    },
-    domainOption: {
-        width: width * 0.8,
-        padding: 10,
-        borderBottomWidth: 1,
-        borderColor: "#ccc",
+    dropdown: {
         backgroundColor: "#f9f9f9",
+        borderRadius: 6,
+        borderWidth: 1,
+        borderColor: "#ccc",
+        marginBottom: 10,
+        width: "90%",
+    },
+    dropdownItem: {
+        padding: 12,
+        borderBottomWidth: 1,
+        borderColor: "#eee",
+    },
+    comboBox: {
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "space-between",
+        height: 55,
+        borderColor: "#BDBDBD",
+        borderWidth: 1,
+        borderRadius: 8,
+        paddingHorizontal: 12,
+        backgroundColor: "#fff",
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+        elevation: 2,
+    },
+    comboBoxText: {
+        fontSize: 16,
+        color: "#000",
+    },
+    arrowIcon: {
+        width: 16,
+        height: 16,
+        tintColor: "#000",
     },
 });
